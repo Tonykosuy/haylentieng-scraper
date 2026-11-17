@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Matching Dashboard — Tìm Người Thân Thất Lạc</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0b0f19;
+      color: #e2e8f0;
+    }
+    .glass-card {
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-card:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+    .score-badge {
+      background: radial-gradient(circle, rgba(99,102,241,0.2) 0%, rgba(17,24,39,0.8) 100%);
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+  </style>
+  <!-- Load Dữ liệu Summary tự động -->
+  <script src="matches_summary.js"></script>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="sticky top-0 z-50 bg-[#0d1322]/90 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-rose-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            AI MATCHING FINDER
+            <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">LIVE</span>
+          </h1>
+          <p class="text-xs text-slate-400">Hệ thống Trực quan hóa Đối chiếu Người thân Thất lạc</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <label class="cursor-pointer px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          <span>Nạp File JSON / CSV Mới</span>
+          <input type="file" id="fileInput" accept=".json,.csv" class="hidden" onchange="handleFileUpload(event)">
+        </label>
+        <button onclick="window.print()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          In Báo Cáo
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-6">
+
+    <!-- HERO METRICS CARDS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Metric 1 -->
+      <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-indigo-500/10 rounded-full blur-xl group-hover:bg-indigo-500/20 transition"></div>
+        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Tổng Hồ Sơ Đã Quét</p>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="statProfiles" class="text-3xl font-extrabold text-white tracking-tight">8,963</span>
+          <span class="text-xs text-emerald-400 font-semibold">/ 13,000 mục tiêu</span>
+        </div>
+        <p class="mt-2 text-xs text-slate-500 flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Đang cào dữ liệu song song
+        </p>
+      </div>
+
+      <!-- Metric 2 -->
+      <div class="glass-card p-5 rounded-2xl relative overflow-hidden group border-rose-500/20">
+        <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-rose-500/10 rounded-full blur-xl group-hover:bg-rose-500/20 transition"></div>
+        <p class="text-xs font-medium text-rose-400 uppercase tracking-wider">Khớp Rất Cao (≥ 80%)</p>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="statHigh" class="text-3xl font-extrabold text-rose-400 tracking-tight">77</span>
+          <span class="text-xs text-rose-300 font-semibold">cặp tiềm năng</span>
+        </div>
+        <p class="mt-2 text-xs text-slate-400">Khả năng cao là cùng người thân</p>
+      </div>
+
+      <!-- Metric 3 -->
+      <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition"></div>
+        <p class="text-xs font-medium text-amber-400 uppercase tracking-wider">Trùng Khớp Tuyệt Đối (100%)</p>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="statPerfect" class="text-3xl font-extrabold text-amber-300 tracking-tight">4</span>
+          <span class="text-xs text-amber-300/80 font-semibold">cặp trùng 100%</span>
+        </div>
+        <p class="mt-2 text-xs text-slate-400">Khớp cả họ tên, cha mẹ, địa danh</p>
+      </div>
+
+      <!-- Metric 4 -->
+      <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition"></div>
+        <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Cặp Ứng Viên Vượt Phễu</p>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="statTotalMatches" class="text-3xl font-extrabold text-blue-400 tracking-tight">13,456</span>
+          <span class="text-xs text-slate-400">cặp</span>
+        </div>
+        <p class="mt-2 text-xs text-slate-400">Đã qua 4 tầng phễu sàng lọc</p>
+      </div>
+    </div>
+
+    <!-- FILTER & SEARCH BAR -->
+    <div class="glass-card p-4 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="relative w-full md:w-96">
+        <input 
+          type="text" 
+          id="searchInput" 
+          oninput="applyFilter()"
+          placeholder="Tìm theo tên, mã số (MS...), quê quán, năm..."
+          class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-2.5 pl-10 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+        >
+        <svg class="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+        <button onclick="setFilter('ALL')" id="tabALL" class="filter-tab px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition">Tất Cả</button>
+        <button onclick="setFilter('HIGH')" id="tabHIGH" class="filter-tab px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">🔥 Khớp Cao (≥80%)</button>
+        <button onclick="setFilter('PERFECT')" id="tabPERFECT" class="filter-tab px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">🌟 Trùng 100%</button>
+        <button onclick="setFilter('RELATIVES')" id="tabRELATIVES" class="filter-tab px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition">👨‍👩‍👦 Trùng Cha/Mẹ</button>
+      </div>
+
+      <div class="text-xs text-slate-400 whitespace-nowrap">
+        Hiển thị <span id="displayedCount" class="font-bold text-white">0</span> kết quả
+      </div>
+    </div>
+
+    <!-- LIST OF MATCH CARDS -->
+    <div id="matchesContainer" class="space-y-4">
+      <!-- Cards will be dynamically injected here -->
+      <div class="p-12 text-center text-slate-500">Đang tải dữ liệu kết quả matching...</div>
+    </div>
+
+  </main>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    let currentData = [];
+    let currentFilter = 'ALL';
+
+    // Khởi tạo nạp dữ liệu
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.MATCH_DATA && window.MATCH_DATA.matches) {
+        loadData(window.MATCH_DATA);
+      } else {
+        // Fallback fetch nếu mở qua web server
+        fetch('matches_for_dashboard.json')
+          .then(res => res.json())
+          .then(data => loadData(data))
+          .catch(err => {
+            console.warn('Cannot fetch directly, awaiting file upload', err);
+          });
+      }
+    });
+
+    function loadData(data) {
+      currentData = data.matches || [];
+      document.getElementById('statProfiles').textContent = (data.total_profiles || 8963).toLocaleString();
+      document.getElementById('statHigh').textContent = (data.high_matches || 0).toLocaleString();
+      document.getElementById('statTotalMatches').textContent = (data.total_matches || currentData.length).toLocaleString();
+      
+      const perfectMatches = currentData.filter(m => m.score >= 99.5).length;
+      document.getElementById('statPerfect').textContent = perfectMatches;
+
+      applyFilter();
+    }
+
+    function setFilter(type) {
+      currentFilter = type;
+      document.querySelectorAll('.filter-tab').forEach(b => {
+        b.classList.remove('bg-indigo-600', 'text-white');
+        b.classList.add('bg-slate-800', 'text-slate-300');
+      });
+      const activeBtn = document.getElementById('tab' + type);
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-slate-800', 'text-slate-300');
+        activeBtn.classList.add('bg-indigo-600', 'text-white');
+      }
+      applyFilter();
+    }
+
+    function applyFilter() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      let filtered = currentData.filter(m => {
+        // Search text
+        if (q) {
+          const matchText = (
+            m.id_a + ' ' + m.name_a + ' ' + (m.loc_a || '') + ' ' + (m.birth_a || '') + ' ' + (m.lost_a || '') + ' ' +
+            m.id_b + ' ' + m.name_b + ' ' + (m.loc_b || '') + ' ' + (m.birth_b || '') + ' ' + (m.lost_b || '')
+          ).toLowerCase();
+          if (!matchText.includes(q)) return false;
+        }
+
+        // Tab Filter
+        if (currentFilter === 'HIGH') return m.score >= 80.0;
+        if (currentFilter === 'PERFECT') return m.score >= 99.5;
+        if (currentFilter === 'RELATIVES') return (m.breakdown.bonus > 0);
+        return true;
+      });
+
+      renderMatches(filtered);
+    }
+
+    function getScoreBadgeColor(score) {
+      if (score >= 90) return 'from-emerald-500 to-teal-400 text-emerald-300 border-emerald-500/30';
+      if (score >= 80) return 'from-rose-500 to-amber-500 text-rose-300 border-rose-500/30';
+      if (score >= 70) return 'from-amber-500 to-yellow-400 text-amber-300 border-amber-500/30';
+      return 'from-blue-500 to-indigo-400 text-blue-300 border-blue-500/30';
+    }
+
+    function renderMatches(list) {
+      document.getElementById('displayedCount').textContent = list.length;
+      const container = document.getElementById('matchesContainer');
+
+      if (!list.length) {
+        container.innerHTML = `
+          <div class="glass-card rounded-2xl p-12 text-center space-y-3">
+            <svg class="w-12 h-12 text-slate-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p class="text-slate-400 text-sm">Không tìm thấy cặp hồ sơ nào phù hợp với bộ lọc hiện tại.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map((m, idx) => {
+        const badgeColor = getScoreBadgeColor(m.score);
+        const isHigh = m.score >= 80;
+
+        return `
+          <div class="glass-card rounded-2xl overflow-hidden transition duration-200 hover:shadow-xl hover:shadow-indigo-950/40">
+            
+            <!-- CARD TOP HEADER -->
+            <div class="px-5 py-3.5 bg-slate-900/80 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center space-x-3">
+                <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-gradient-to-r ${badgeColor} text-white shadow-sm">
+                  ${m.score.toFixed(1)}% MATCH
+                </span>
+                <span class="text-xs font-medium ${isHigh ? 'text-rose-400 bg-rose-500/10 border-rose-500/20' : 'text-blue-400 bg-blue-500/10 border-blue-500/20'} px-2.5 py-0.5 rounded-full border">
+                  ${isHigh ? '🔴 CỰC KỲ KHẢ THI (≥80%)' : '🟡 TRÙNG KHỚP VỪA (65-79%)'}
+                </span>
+                <span class="text-xs text-slate-400">Cặp #${idx + 1}</span>
+              </div>
+
+              <div class="flex items-center space-x-2 text-xs text-slate-400 font-mono">
+                <span class="px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-bold">${m.id_a}</span>
+                <span>↔</span>
+                <span class="px-2 py-0.5 rounded bg-slate-800 text-indigo-300 font-bold">${m.id_b}</span>
+              </div>
+            </div>
+
+            <!-- CARD BODY: 3 COLUMNS COMPARISON -->
+            <div class="p-5 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              
+              <!-- LEFT: PROFILE A -->
+              <div class="lg:col-span-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800/80 space-y-3">
+                <div class="flex items-start gap-3">
+                  <div class="w-14 h-16 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                    ${m.img_a ? `
+                      <img src="${m.img_a}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span class=\\'text-xs font-bold text-slate-400\\'>${m.name_a ? m.name_a.charAt(0) : 'A'}</span>'">
+                    ` : `
+                      <span class="text-xs font-bold text-slate-400">${m.name_a ? m.name_a.charAt(0) : 'A'}</span>
+                    `}
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider block">Hồ Sơ A • ${m.id_a}</span>
+                    <h3 class="text-sm font-bold text-white truncate" title="${m.name_a}">${m.name_a || '(Chưa rõ tên)'}</h3>
+                    <p class="text-[11px] text-slate-400 line-clamp-1 mt-0.5">${m.title_a || ''}</p>
+                  </div>
+                </div>
+
+                <div class="space-y-1.5 text-xs text-slate-300 pt-2 border-t border-slate-800/80">
+                  <div class="flex justify-between">
+                    <span class="text-slate-500">Năm sinh:</span>
+                    <span class="font-semibold text-slate-200">${m.birth_a || 'Không rõ'}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-500">Năm thất lạc:</span>
+                    <span class="font-semibold text-amber-300">${m.lost_a || 'Không rõ'}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-500">Quê quán:</span>
+                    <span class="font-medium text-slate-200 text-right truncate max-w-[160px]">${m.loc_a || 'Không rõ'}</span>
+                  </div>
+                  ${m.father_a ? `
+                    <div class="flex justify-between">
+                      <span class="text-slate-500">Tên cha:</span>
+                      <span class="text-slate-300 font-medium">${m.father_a}</span>
+                    </div>
+                  ` : ''}
+                  ${m.mother_a ? `
+                    <div class="flex justify-between">
+                      <span class="text-slate-500">Tên mẹ:</span>
+                      <span class="text-slate-300 font-medium">${m.mother_a}</span>
+                    </div>
+                  ` : ''}
+                </div>
+
+                <a href="${m.link_a}" target="_blank" class="w-full inline-flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-indigo-300 hover:text-white bg-indigo-950/40 hover:bg-indigo-900/60 rounded-lg border border-indigo-800/40 transition">
+                  <span>Mở Profile Gốc</span>
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                </a>
+              </div>
+
+              <!-- MIDDLE: 5-DIMENSION ANALYSIS & LOGIC BREAKDOWN -->
+              <div class="lg:col-span-4 flex flex-col justify-between h-full space-y-4">
+                <div>
+                  <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Chỉ Số Đo Lường 5 Chiều
+                  </h4>
+
+                  <div class="space-y-2 text-xs">
+                    <!-- Tên -->
+                    <div>
+                      <div class="flex justify-between text-[11px] mb-0.5">
+                        <span class="text-slate-400">Tên người (W: 35%)</span>
+                        <span class="font-bold text-indigo-300">${m.breakdown.name.weighted} / 35đ</span>
+                      </div>
+                      <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-indigo-500 h-full rounded-full" style="width: ${(m.breakdown.name.score)}%"></div>
+                      </div>
+                      <span class="text-[10px] text-slate-500 block truncate">${m.breakdown.name.note}</span>
+                    </div>
+
+                    <!-- Năm sinh -->
+                    <div>
+                      <div class="flex justify-between text-[11px] mb-0.5">
+                        <span class="text-slate-400">Năm sinh (W: 20%)</span>
+                        <span class="font-bold text-indigo-300">${m.breakdown.birth.weighted} / 20đ</span>
+                      </div>
+                      <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-indigo-500 h-full rounded-full" style="width: ${(m.breakdown.birth.score)}%"></div>
+                      </div>
+                      <span class="text-[10px] text-slate-500 block truncate">${m.breakdown.birth.note}</span>
+                    </div>
+
+                    <!-- Địa danh -->
+                    <div>
+                      <div class="flex justify-between text-[11px] mb-0.5">
+                        <span class="text-slate-400">Địa danh lịch sử (W: 20%)</span>
+                        <span class="font-bold text-indigo-300">${m.breakdown.location.weighted} / 20đ</span>
+                      </div>
+                      <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-indigo-500 h-full rounded-full" style="width: ${(m.breakdown.location.score)}%"></div>
+                      </div>
+                      <span class="text-[10px] text-slate-500 block truncate">${m.breakdown.location.note}</span>
+                    </div>
+
+                    <!-- Năm thất lạc -->
+                    <div>
+                      <div class="flex justify-between text-[11px] mb-0.5">
+                        <span class="text-slate-400">Năm thất lạc (W: 15%)</span>
+                        <span class="font-bold text-indigo-300">${m.breakdown.lost.weighted} / 15đ</span>
+                      </div>
+                      <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-indigo-500 h-full rounded-full" style="width: ${(m.breakdown.lost.score)}%"></div>
+                      </div>
+                      <span class="text-[10px] text-slate-500 block truncate">${m.breakdown.lost.note}</span>
+                    </div>
+
+                    <!-- Bonus Thân nhân nếu có -->
+                    ${m.breakdown.bonus > 0 ? `
+                      <div class="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-[11px]">
+                        <span class="font-bold block">✨ Bonus Thân Nhân: +${m.breakdown.bonus}đ</span>
+                        <span class="text-[10px] text-emerald-400/90">${m.breakdown.relatives_notes.join(', ')}</span>
+                      </div>
+                    ` : ''}
+                  </div>
+                </div>
+
+                <button onclick="toggleStory('${idx}')" class="w-full py-1.5 text-xs text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 rounded-lg border border-slate-700 transition flex items-center justify-center gap-1">
+                  <span>Xem Chi Tiết Câu Chuyện 2 Bên</span>
+                  <svg id="arrow_${idx}" class="w-3.5 h-3.5 transform transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+              </div>
+
+              <!-- RIGHT: PROFILE B -->
+              <div class="lg:col-span-4 bg-slate-900/50 p-4 rounded-xl border border-slate-800/80 space-y-3">
+                <div class="flex items-start gap-3">
+                  <div class="w-14 h-16 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                    ${m.img_b ? `
+                      <img src="${m.img_b}" class="w-full h-full object-cover" onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<span class=\\'text-xs font-bold text-slate-400\\'>${m.name_b ? m.name_b.charAt(0) : 'B'}</span>'">
+                    ` : `
+                      <span class="text-xs font-bold text-slate-400">${m.name_b ? m.name_b.charAt(0) : 'B'}</span>
+                    `}
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">Hồ Sơ B • ${m.id_b}</span>
+                    <h3 class="text-sm font-bold text-white truncate" title="${m.name_b}">${m.name_b || '(Chưa rõ tên)'}</h3>
+                    <p class="text-[11px] text-slate-400 line-clamp-1 mt-0.5">${m.title_b || ''}</p>
+                  </div>
+                </div>
+
+                <div class="space-y-1.5 text-xs text-slate-300 pt-2 border-t border-slate-800/80">
+                  <div class="flex justify-between">
+                    <span class="text-slate-500">Năm sinh:</span>
+                    <span class="font-semibold text-slate-200">${m.birth_b || 'Không rõ'}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-500">Năm thất lạc:</span>
+                    <span class="font-semibold text-amber-300">${m.lost_b || 'Không rõ'}</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-slate-500">Quê quán:</span>
+                    <span class="font-medium text-slate-200 text-right truncate max-w-[160px]">${m.loc_b || 'Không rõ'}</span>
+                  </div>
+                  ${m.father_b ? `
+                    <div class="flex justify-between">
+                      <span class="text-slate-500">Tên cha:</span>
+                      <span class="text-slate-300 font-medium">${m.father_b}</span>
+                    </div>
+                  ` : ''}
+                  ${m.mother_b ? `
+                    <div class="flex justify-between">
+                      <span class="text-slate-500">Tên mẹ:</span>
+                      <span class="text-slate-300 font-medium">${m.mother_b}</span>
+                    </div>
+                  ` : ''}
+                </div>
+
+                <a href="${m.link_b}" target="_blank" class="w-full inline-flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-emerald-300 hover:text-white bg-emerald-950/40 hover:bg-emerald-900/60 rounded-lg border border-emerald-800/40 transition">
+                  <span>Mở Profile Gốc</span>
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                </a>
+              </div>
+
+            </div>
+
+            <!-- COLLAPSIBLE STORY SECTION -->
+            <div id="story_${idx}" class="hidden px-5 pb-5 pt-2 border-t border-slate-800/80 bg-slate-950/40">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300 mt-2">
+                <div class="p-3 rounded-lg bg-slate-900/90 border border-slate-800">
+                  <span class="font-bold text-indigo-400 block mb-1">📖 Câu chuyện bên A:</span>
+                  <p class="leading-relaxed text-slate-300">${m.story_a || '(Không có nội dung chi tiết)'}</p>
+                </div>
+                <div class="p-3 rounded-lg bg-slate-900/90 border border-slate-800">
+                  <span class="font-bold text-emerald-400 block mb-1">📖 Câu chuyện bên B:</span>
+                  <p class="leading-relaxed text-slate-300">${m.story_b || '(Không có nội dung chi tiết)'}</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleStory(idx) {
+      const el = document.getElementById('story_' + idx);
+      const arr = document.getElementById('arrow_' + idx);
+      if (el) {
+        el.classList.toggle('hidden');
+        if (arr) arr.classList.toggle('rotate-180');
+      }
+    }
+
+    // Xử lý nạp file JSON / CSV từ bên ngoài
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          if (file.name.endsWith('.json')) {
+            const parsed = JSON.parse(e.target.result);
+            loadData(parsed);
+            alert(`Nạp thành công file JSON với ${parsed.matches ? parsed.matches.length : 0} cặp kết quả!`);
+          } else {
+            alert('Vui lòng chọn file JSON trích xuất từ matching_engine!');
+          }
+        } catch (err) {
+          alert('Lỗi đọc file: ' + err.message);
+        }
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+  </script>
+
+</body>
+</html>
